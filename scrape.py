@@ -5,6 +5,7 @@ import numpy as np
 import httplib2
 from functions import clean_data, reset_index
 import time
+from datetime import datetime
 
 start_time = time.time()
 
@@ -44,35 +45,35 @@ for year in financial_years:
                        incomplete: ["18IncompBench", "ZeroRTTIPBench"], }
 
         reports.update(reports_new)
-    #
-    # edwta = "https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/" \
-    #         f"ae-attendances-and-emergency-admissions-{year}/"
-    # for month in months:
-    #     ed = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/{month}.*.xls"
-    #
-    #     links[edwta] = links.get(edwta, []) + [ed]
-    #
-    #     reports_new = {ed: ["AESitrep4Bench", "AEAttendBench"], }
-    #     reports.update(reports_new)
-    #
-    # for month in months:
-    #     if month == 'January' or month == 'February' or month == 'March':
-    #         cancerwt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-prov-cwt/" \
-    #                    f"{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-waiting-times-for-" \
-    #                    f"{month}-20{year[-2:]}-provisional/"
-    #         cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}.*.xls.*"
-    #         links[cancerwt] = links.get(cancerwt, []) + [cancer]
-    #     else:
-    #         cancerwt2 = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-prov-cwt/" \
-    #                     f"{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-waiting-times-for-" \
-    #                     f"{month}-{year[:4]}-provisional/"
-    #         cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}.*.xls.*"
-    #         links[cancerwt2] = links.get(cancerwt2, []) + [cancer]
-    #
-    #     reports_new = {
-    #         cancer: ["CancerUrgBench", "CanNatScr0Bench", "CancerAll0Bench", "CanSurg0Bench", "Cancanti0Bench",
-    #                  "CancerRad0Bench", "CancUrgF0Bench", "CancBreastBench"], }
-    #     reports.update(reports_new)
+
+    edwta = "https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/" \
+            f"ae-attendances-and-emergency-admissions-{year}/"
+    for month in months:
+        ed = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/{month}.*.xls"
+
+        links[edwta] = links.get(edwta, []) + [ed]
+
+        reports_new = {ed: ["AESitrep4Bench", "AEAttendBench"], }
+        reports.update(reports_new)
+
+    for month in months:
+        if month == 'January' or month == 'February' or month == 'March':
+            cancerwt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-prov-cwt/" \
+                       f"{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-waiting-times-for-" \
+                       f"{month}-20{year[-2:]}-provisional/"
+            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}.*.xls.*"
+            links[cancerwt] = links.get(cancerwt, []) + [cancer]
+        else:
+            cancerwt2 = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-prov-cwt/" \
+                        f"{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-waiting-times-for-" \
+                        f"{month}-{year[:4]}-provisional/"
+            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}.*.xls.*"
+            links[cancerwt2] = links.get(cancerwt2, []) + [cancer]
+
+        reports_new = {
+            cancer: ["CancerUrgBench", "CanNatScr0Bench", "CancerAll0Bench", "CanSurg0Bench", "Cancanti0Bench",
+                     "CancerRad0Bench", "CancUrgF0Bench", "CancBreastBench"], }
+        reports.update(reports_new)
 
 # as each download is different, we pass the param_select values when converting data from csv to frame
 param_select = {"18AdmBench": {"delim_whitespace": True, "sheet_name": 'Provider', "skiprows": 13, "index_col": 0,
@@ -111,9 +112,8 @@ param_select = {"18AdmBench": {"delim_whitespace": True, "sheet_name": 'Provider
                 }
 
 
-def download_bench_data(master):
+def download_bench_data():
     to_download = []
-    lookup = {}
     file_name = []
     target = []
     for k in links:
@@ -127,48 +127,42 @@ def download_bench_data(master):
                         to_download.append(link.get('href'))
                     file_name.append(link.get('href').rsplit('/', 1)[-1])
                     target.append(y)
-    print(lookup)
-    # for url_link in to_download:
-    #     raw_files = pd.read_excel(url_link)
-    #     raw_files.to_excel(f"data/{url_link.rsplit('/', 1)[-1]}.xlsx")
+
+    import urllib.request as urllib
+    for url_link in to_download:
+        urllib.urlretrieve(url_link, f"data/{url_link.rsplit('/', 1)[-1]}")
+
     df_list = pd.DataFrame(list(zip(file_name, target)), columns=['file_name', 'target'])
     df_list.to_csv("data/list.csv")
+    return "Finished Downloading Files"
 
-# todo change the download so that it uses from urllib.request import urlopen, urlretrieve to get the full sheets
 
-# IPFBenchForSQL = download_bench_data(IPFBenchForSQL)
-# print(IPFBenchForSQL)
-#
+print(download_bench_data())
 
-def etl_data(location):
+master = pd.DataFrame()
+
+
+def etl_data(master):
     lookup = pd.read_csv(r"data\list.csv")
     for row in lookup.itertuples():
         print(getattr(row, "file_name"), getattr(row, "target"))
-        data = pd.read_excel(f"{location}{getattr(row, 'file_name')}.xlsx", **param_select.get(getattr(row, "target")))
-        print(data.head(1))
+        data = pd.read_excel(f"data/{getattr(row, 'file_name')}", **param_select.get(getattr(row, "target")))
+        # create new columns with dynamic data
+        new_columns = {'Append_Date': datetime.now(), 'Indicator_ID': getattr(row, "target"), 'User_Name': 'Gareth',
+                       'Submitted_By': 'Gareth', 'Section_Code': 0,
+                       'Data_Month': custom_switch}
+        # for each column abote, create the column in the dataframe - get values from the dictionary
+        for i in new_columns:
+            data[i] = new_columns.get(i)
+        # pass the defined functions to clean the data and then reset the index if required before appending
+        # to the empty master dataframe
+        data = clean_data(data, getattr(row, "target"))
+        data = reset_index(data, getattr(row, "target"))
+        master = master.append(data, ignore_index=True, sort=False)
+    return master
 
 
-etl_data(r"data/")
-
-#     # custom switch is a dynamic variable that is either 1 or 2 months previous from current month
-#     if y in ("AESitrep4Bench", "AEAttendBench"):
-#         custom_switch = Data_Month_ED_Append
-#     else:
-#         custom_switch = Data_Month_Other_Append
-#     # create new columns with dynamic data
-#     new_columns = {'Append_Date': Append_Date, 'Indicator_ID': y, 'User_Name': 'Gareth',
-#                    'Submitted_By': 'Gareth', 'Section_Code': 0,
-#                    'Data_Month': custom_switch}
-#     # for each column abote, create the column in the dataframe - get values from the dictionary
-#     for i in new_columns:
-#         data[i] = new_columns.get(i)
-#     # pass the defined functions to clean the data and then reset the index if required before appending
-#     # to the empty master dataframe
-#     data = clean_data(data, y)
-#     data = reset_index(data, y)
-#     master = master.append(data, ignore_index=True, sort=False)
-# return master
-
+print(etl_data(master))
 
 #     # for each dynamic download link (x) in the webpages
 #     for x in links[k]:
