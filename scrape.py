@@ -137,20 +137,51 @@ def download_bench_data():
     return "Finished Downloading Files"
 
 
-print(download_bench_data())
+# print(download_bench_data())
 
 master = pd.DataFrame()
 
+
+def calc_period(data, target):
+    dispatch = {
+        "18AdmBench": 'C4',
+        "ZeroRTTAPBench": 'C4',
+        "18NonAdmBench": 'C4',
+        "ZeroRTTNPBench": 'C4',
+        "18IncompBench": 'C4',
+        "ZeroRTTIPBench": 'C4',
+        "AESitrep4Bench": 'C5',
+        "AEAttendBench": 'C5',
+        "CancerUrgBench": 'A2',
+        "CanNatScr0Bench": 'A2',
+        "CancerAll0Bench": 'A2',
+        "CanSurg0Bench": 'A2',
+        "Cancanti0Bench": 'A2',
+        "CancerRad0Bench": 'A2',
+        "CancUrgF0Bench": 'A2',
+        "CancBreastBench": 'A2',
+    }
+    data = dispatch[target]
+    return data
+
+# print(calc_period(master, "ZeroRTTIPBench")[:1])
+# print(calc_period(master, "ZeroRTTIPBench")[1:])
 
 def etl_data(master):
     lookup = pd.read_csv(r"data\list.csv")
     for row in lookup.itertuples():
         print(getattr(row, "file_name"), getattr(row, "target"))
         data = pd.read_excel(f"data/{getattr(row, 'file_name')}", **param_select.get(getattr(row, "target")))
+
+        date_cell_ref = calc_period(data, getattr(row, "target"))
+        data_month = pd.read_excel(f"data/{getattr(row, 'file_name')}", index_col=None, usecols=date_cell_ref[:1], header=int(date_cell_ref[1:]), nrows=0)
+        data_month = data_month.columns.values[0]
+        period = data_month
+
         # create new columns with dynamic data
         new_columns = {'Append_Date': datetime.now(), 'Indicator_ID': getattr(row, "target"), 'User_Name': 'Gareth',
                        'Submitted_By': 'Gareth', 'Section_Code': 0,
-                       'Data_Month': custom_switch}
+                       'Data_Month': period}
         # for each column abote, create the column in the dataframe - get values from the dictionary
         for i in new_columns:
             data[i] = new_columns.get(i)
@@ -159,42 +190,10 @@ def etl_data(master):
         data = clean_data(data, getattr(row, "target"))
         data = reset_index(data, getattr(row, "target"))
         master = master.append(data, ignore_index=True, sort=False)
+    master.to_excel("data/master.xlsx")
     return master
 
 
 print(etl_data(master))
-
-#     # for each dynamic download link (x) in the webpages
-#     for x in links[k]:
-#         # print(x)
-#         # establish the connection to the webpage (k)
-#         status, response = http.request(k)
-#         # parse all of the html links in the background looking for href urls looking for a match to x
-#         for link in bs4.BeautifulSoup(response, 'html.parser', parse_only=bs4.SoupStrainer('a', href=True)) \
-#                 .find_all(attrs={'href': re.compile(x)}):
-#             # print(link)
-#             # for each Indicator_ID in the reports dictionary use pandas to read the data using appropriate params
-#             for y in reports[x]:
-#                 print("FOUND: " + link.get('href') + " (" + y + ")")
-#                 data = pd.read_excel(link.get('href'), **param_select.get(y))
-#                 # custom switch is a dynamic variable that is either 1 or 2 months previous from current month
-#                 if y in ("AESitrep4Bench", "AEAttendBench"):
-#                     custom_switch = Data_Month_ED_Append
-#                 else:
-#                     custom_switch = Data_Month_Other_Append
-#                 # create new columns with dynamic data
-#                 new_columns = {'Append_Date': Append_Date, 'Indicator_ID': y, 'User_Name': 'Gareth',
-#                                'Submitted_By': 'Gareth', 'Section_Code': 0,
-#                                'Data_Month': custom_switch}
-#                 # for each column abote, create the column in the dataframe - get values from the dictionary
-#                 for i in new_columns:
-#                     data[i] = new_columns.get(i)
-#                 # pass the defined functions to clean the data and then reset the index if required before appending
-#                 # to the empty master dataframe
-#                 data = clean_data(data, y)
-#                 data = reset_index(data, y)
-#                 master = master.append(data, ignore_index=True, sort=False)
-# return master
-
 
 print(f"Program took {time.time() - start_time} s to run")
