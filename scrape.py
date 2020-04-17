@@ -23,10 +23,6 @@ financial_years = ['2019-20']
 months = {'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6, 'July': 7,
           'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12}
 
-# this is a blank df with preset columns
-IPFBenchForSQL = pd.DataFrame(columns=['Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code',
-                                       'Grouping_2', 'Grouping_3', 'User_Name', 'Submitted_By', 'Numerator',
-                                       'Denominator', 'Numeric_Value'])
 links = {}
 reports = {}
 
@@ -142,12 +138,13 @@ def download_bench_data():
     return "Finished Downloading Files"
 
 
-# print(download_bench_data())
+print(download_bench_data())
 
-frame = pd.DataFrame()
+frame = pd.DataFrame(columns=['Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code', 'org', 'Grouping_2',
+                              'Grouping_3', 'User_Name', 'Submitted_By', 'Numerator', 'Denominator', 'Numeric_Value'])
 
 
-def calc_period(data, target):
+def calc_period(target):
     dispatch = {
         "18AdmBench": 'C4',
         "ZeroRTTAPBench": 'C4',
@@ -166,8 +163,8 @@ def calc_period(data, target):
         "CancUrgF0Bench": 'A2',
         "CancBreastBench": 'A2',
     }
-    data = dispatch[target]
-    return data
+    cell_ref = dispatch[target]
+    return cell_ref
 
 
 # print(calc_period(master, "ZeroRTTIPBench")[:1])
@@ -180,7 +177,7 @@ def etl_data(master):
         print(getattr(row, "file_name"), getattr(row, "target"))
         data = pd.read_excel(f"data/{getattr(row, 'file_name')}", **param_select.get(getattr(row, "target")))
 
-        date_cell_ref = calc_period(data, getattr(row, "target"))
+        date_cell_ref = calc_period(getattr(row, "target"))
         data_month = pd.read_excel(f"data/{getattr(row, 'file_name')}", index_col=None, usecols=date_cell_ref[:1],
                                    header=int(date_cell_ref[1:]), nrows=0)
         data_month = data_month.columns.values[0]

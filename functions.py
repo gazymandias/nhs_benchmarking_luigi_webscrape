@@ -11,6 +11,11 @@ def reset_index(data, name):
     return data
 
 
+def clean_columns(data):
+    data = data.rename(columns=lambda x: x.strip())
+    return data
+
+
 def rename_columns(data, name):
     rtt_columns = {
         'Provider Code': 'Grouping_2',
@@ -18,27 +23,33 @@ def rename_columns(data, name):
         'Total number of incomplete pathways': 'Denominator',
         'Total within 18 weeks': 'Numerator',
         '52 plus': 'Numeric_Value',
+        'Provider Name': 'org',
     }
     cancer_62_columns = {
         'WITHIN 62 DAYS': 'Numerator',
         'TOTAL': 'Denominator',
         'ODS CODE (1)': 'Grouping_2',
+        'ACCOUNTABLE PROVIDER (4) (5)': 'org',
     }
     cancer_31_columns = {
         'WITHIN 31 DAYS': 'Numerator',
         'TOTAL': 'Denominator',
         'ODS CODE (1)': 'Grouping_2',
+        'PROVIDER (4) (5)': 'org',
     }
     cancer_14_columns = {
         'WITHIN 14 DAYS': 'Numerator',
         'TOTAL': 'Denominator',
         'ODS CODE (1)': 'Grouping_2',
+        'PROVIDER (4) (5)': 'org',
     }
     ed_denominator_columns = {
         'Code': 'Grouping_2',
+        'Name': 'org',
     }
     ed_numeric_columns = {
         'Code': 'Grouping_2',
+        'Name': 'org',
     }
 
     dispatch = {
@@ -68,27 +79,27 @@ def rename_columns(data, name):
 def group_by(data, name):
     def group_by_denominator(data):
         data = data.groupby(
-            ['Grouping_2', 'Numerator', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code', 'User_Name',
-             'Submitted_By'])['Denominator'].sum()
+            ['Grouping_2', 'org', 'Numerator', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code',
+             'User_Name', 'Submitted_By'])['Denominator'].sum()
         return data
 
     def group_by_numeric(data):
         data = data.groupby(
-            ['Grouping_2', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code', 'User_Name', 'Submitted_By'])[
-            'Numeric_Value'].sum()
+            ['Grouping_2', 'org', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code', 'User_Name',
+             'Submitted_By'])['Numeric_Value'].sum()
         return data
 
     def group_by_ed_denominator(data):
         data = data.groupby(
-            ['Grouping_2', 'Grouping_3', 'Numerator', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code',
-             'User_Name', 'Submitted_By'])[
+            ['Grouping_2', 'org', 'Grouping_3', 'Numerator', 'Append_Date', 'Indicator_ID', 'Data_Month',
+             'Section_Code', 'User_Name', 'Submitted_By'])[
             'Denominator'].sum()
         return data
 
     def group_by_ed_numeric(data):
         data = data.groupby(
-            ['Grouping_2', 'Grouping_3', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code', 'User_Name',
-             'Submitted_By'])['Numeric_Value'].sum()
+            ['Grouping_2', 'org', 'Grouping_3', 'Append_Date', 'Indicator_ID', 'Data_Month', 'Section_Code',
+             'User_Name', 'Submitted_By'])['Numeric_Value'].sum()
         return data
 
     dispatch = {
@@ -194,7 +205,8 @@ def transform_data(data, name):
 
 
 def clean_data(data, name):
-    # print("Renaming columns...")
+    data = clean_columns(data=data)
+    # print("Whitespaces cleaned from columns")
     rename_columns(data, name)
     # print("Columns renamed, transforming data...")
     data = transform_data(data, name)
