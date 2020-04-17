@@ -6,6 +6,7 @@ import httplib2
 from functions import clean_data, reset_index
 import time
 from datetime import datetime
+import urllib.request as urllib
 
 start_time = time.time()
 
@@ -33,9 +34,12 @@ reports = {}
 for year in financial_years:
     rtt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/rtt-data-{year}"
     for month in months:
-        admitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/Admitted-Provider-{month[:3]}"
-        nonadmitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/NonAdmitted-Provider-{month[:3]}"
-        incomplete = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/Incomplete-Provider-{month[:3]}"
+        admitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
+                   rf"Admitted-Provider-{month[:3]}"
+        nonadmitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
+                      rf"NonAdmitted-Provider-{month[:3]}"
+        incomplete = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
+                     rf"Incomplete-Provider-{month[:3]}"
 
         links[rtt] = links.get(rtt, []) + [admitted, nonadmitted, incomplete]
 
@@ -58,16 +62,18 @@ for year in financial_years:
 
     for month in months:
         if month == 'January' or month == 'February' or month == 'March':
-            cancerwt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-prov-cwt/" \
-                       f"{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-waiting-times-for-" \
-                       f"{month}-20{year[-2:]}-provisional/"
-            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}.*.xls.*"
+            cancerwt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/" \
+                       f"monthly-prov-cwt/{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-" \
+                       f"cancer-waiting-times-for-{month}-20{year[-2:]}-provisional/"
+            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/" \
+                     rf".*{month.upper()}.*.xls.*"
             links[cancerwt] = links.get(cancerwt, []) + [cancer]
         else:
-            cancerwt2 = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-prov-cwt/" \
-                        f"{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-waiting-times-for-" \
-                        f"{month}-{year[:4]}-provisional/"
-            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}.*.xls.*"
+            cancerwt2 = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-" \
+                        f"prov-cwt/{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-" \
+                        f"waiting-times-for-{month}-{year[:4]}-provisional/"
+            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}" \
+                     rf".*.xls.*"
             links[cancerwt2] = links.get(cancerwt2, []) + [cancer]
 
         reports_new = {
@@ -128,7 +134,6 @@ def download_bench_data():
                     file_name.append(link.get('href').rsplit('/', 1)[-1])
                     target.append(y)
 
-    import urllib.request as urllib
     for url_link in to_download:
         urllib.urlretrieve(url_link, f"data/{url_link.rsplit('/', 1)[-1]}")
 
@@ -139,7 +144,7 @@ def download_bench_data():
 
 # print(download_bench_data())
 
-master = pd.DataFrame()
+frame = pd.DataFrame()
 
 
 def calc_period(data, target):
@@ -164,8 +169,10 @@ def calc_period(data, target):
     data = dispatch[target]
     return data
 
+
 # print(calc_period(master, "ZeroRTTIPBench")[:1])
 # print(calc_period(master, "ZeroRTTIPBench")[1:])
+
 
 def etl_data(master):
     lookup = pd.read_csv(r"data\list.csv")
@@ -174,8 +181,10 @@ def etl_data(master):
         data = pd.read_excel(f"data/{getattr(row, 'file_name')}", **param_select.get(getattr(row, "target")))
 
         date_cell_ref = calc_period(data, getattr(row, "target"))
-        data_month = pd.read_excel(f"data/{getattr(row, 'file_name')}", index_col=None, usecols=date_cell_ref[:1], header=int(date_cell_ref[1:]), nrows=0)
+        data_month = pd.read_excel(f"data/{getattr(row, 'file_name')}", index_col=None, usecols=date_cell_ref[:1],
+                                   header=int(date_cell_ref[1:]), nrows=0)
         data_month = data_month.columns.values[0]
+        data_month = pd.to_datetime(data_month)
         period = data_month
 
         # create new columns with dynamic data
@@ -194,6 +203,6 @@ def etl_data(master):
     return master
 
 
-print(etl_data(master))
+print(etl_data(frame))
 
 print(f"Program took {time.time() - start_time} s to run")
