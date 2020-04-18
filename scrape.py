@@ -28,23 +28,23 @@ reports = {}
 
 # keys - websites with requisite download links
 for year in financial_years:
-    rtt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/rtt-data-{year}"
-    for month in months:
-        admitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
-                   rf"Admitted-Provider-{month[:3]}"
-        nonadmitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
-                      rf"NonAdmitted-Provider-{month[:3]}"
-        incomplete = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
-                     rf"Incomplete-Provider-{month[:3]}"
-
-        links[rtt] = links.get(rtt, []) + [admitted, nonadmitted, incomplete]
-
-        # dictionary - for each download link we pull the data for multiple indicators ("reports")
-        reports_new = {admitted: ["18AdmBench", "ZeroRTTAPBench"],
-                       nonadmitted: ["18NonAdmBench", "ZeroRTTNPBench"],
-                       incomplete: ["18IncompBench", "ZeroRTTIPBench"], }
-
-        reports.update(reports_new)
+    # rtt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/rtt-data-{year}"
+    # for month in months:
+    #     admitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
+    #                rf"Admitted-Provider-{month[:3]}"
+    #     nonadmitted = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
+    #                   rf"NonAdmitted-Provider-{month[:3]}"
+    #     incomplete = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*/" \
+    #                  rf"Incomplete-Provider-{month[:3]}"
+    #
+    #     links[rtt] = links.get(rtt, []) + [admitted, nonadmitted, incomplete]
+    #
+    #     # dictionary - for each download link we pull the data for multiple indicators ("reports")
+    #     reports_new = {admitted: ["18AdmBench", "ZeroRTTAPBench"],
+    #                    nonadmitted: ["18NonAdmBench", "ZeroRTTNPBench"],
+    #                    incomplete: ["18IncompBench", "ZeroRTTIPBench"], }
+    #
+    #     reports.update(reports_new)
 
     edwta = "https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/" \
             f"ae-attendances-and-emergency-admissions-{year}/"
@@ -56,26 +56,26 @@ for year in financial_years:
         reports_new = {ed: ["AESitrep4Bench", "AEAttendBench"], }
         reports.update(reports_new)
 
-    for month in months:
-        if month == 'January' or month == 'February' or month == 'March':
-            cancerwt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/" \
-                       f"monthly-prov-cwt/{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-" \
-                       f"cancer-waiting-times-for-{month}-20{year[-2:]}-provisional/"
-            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/" \
-                     rf".*{month.upper()}.*.xls.*"
-            links[cancerwt] = links.get(cancerwt, []) + [cancer]
-        else:
-            cancerwt2 = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-" \
-                        f"prov-cwt/{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-" \
-                        f"waiting-times-for-{month}-{year[:4]}-provisional/"
-            cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}" \
-                     rf".*.xls.*"
-            links[cancerwt2] = links.get(cancerwt2, []) + [cancer]
-
-        reports_new = {
-            cancer: ["CancerUrgBench", "CanNatScr0Bench", "CancerAll0Bench", "CanSurg0Bench", "Cancanti0Bench",
-                     "CancerRad0Bench", "CancUrgF0Bench", "CancBreastBench"], }
-        reports.update(reports_new)
+    # for month in months:
+    #     if month == 'January' or month == 'February' or month == 'March':
+    #         cancerwt = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/" \
+    #                    f"monthly-prov-cwt/{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-" \
+    #                    f"cancer-waiting-times-for-{month}-20{year[-2:]}-provisional/"
+    #         cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/" \
+    #                  rf".*{month.upper()}.*.xls.*"
+    #         links[cancerwt] = links.get(cancerwt, []) + [cancer]
+    #     else:
+    #         cancerwt2 = f"https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/monthly-" \
+    #                     f"prov-cwt/{year}-monthly-provider-cancer-waiting-times-statistics/provider-based-cancer-" \
+    #                     f"waiting-times-for-{month}-{year[:4]}-provisional/"
+    #         cancer = rf"^(https?://)?(www\.)?england.nhs.uk/statistics/wp-content/uploads/sites/2/.*{month.upper()}" \
+    #                  rf".*.xls.*"
+    #         links[cancerwt2] = links.get(cancerwt2, []) + [cancer]
+    #
+    #     reports_new = {
+    #         cancer: ["CancerUrgBench", "CanNatScr0Bench", "CancerAll0Bench", "CanSurg0Bench", "Cancanti0Bench",
+    #                  "CancerRad0Bench", "CancUrgF0Bench", "CancBreastBench"], }
+    #     reports.update(reports_new)
 
 # as each download is different, we pass the param_select values when converting data from csv to frame
 param_select = {"18AdmBench": {"delim_whitespace": True, "sheet_name": 'Provider', "skiprows": 13, "index_col": 0,
