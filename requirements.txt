@@ -2,7 +2,7 @@ beautifulsoup4==4.9.0
 bs4==0.0.1
 docutils==0.16
 et-xmlfile==1.0.1
-httplib2==0.17.2
+httplib2==0.18.0
 jdcal==1.4.1
 lockfile==0.12.2
 luigi==2.8.12
